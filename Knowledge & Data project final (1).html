@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <title>DBSoccer</title>
+    <style type="text/css">
+        @import url('https://fonts.googleapis.com/css?family=Cabin+Sketch|Open+Sans');
+        * {
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: 'Cabin Sketch', cursive, 'Open Sans', sans-serif !important;
+            font-size: 50px;
+        }
+
+
+
+        #fixfoto img {
+            width: 50%;
+            height: auto;
+            opacity: 0.1;
+            align-content: center;
+            position: absolute;
+            margin: auto;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+        }
+
+        #picture img {
+            width: 100% !important;
+            height: auto !important;
+            align-self: center;
+        }
+
+        .wrapper {
+            margin-bottom: 50px;
+        }
+
+        .content {
+            width: 100%;
+            float: left;
+        }
+
+        .TopCollumn {
+            width: 99%;
+            float: left;
+            border-style: solid;
+            border-width: 3px;
+            border-color: #666666;
+        }
+
+        .leftCollumn {
+            width: 25%;
+            float: left;
+            border-style: solid;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        .middleCollumn {
+            width: 44%;
+            float: left;
+            border-style: solid solid solid none;
+            border-width: 1px;
+            border-color: #666666;
+            font-size: 13px !important;
+        }
+
+        .rightCollumn {
+            width: 30%;
+            float: left;
+            border-style: solid solid solid solid;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        a {
+            color: #666666;
+            font-weight: bold;
+            text-decoration: none;
+
+        }
+
+        .pictureratingspecs {
+            width: 99%;
+            float: left;
+            border-style: none none none none;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        .picturerating {
+            width: 35%;
+            float: left;
+            border-style: none solid none none;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        .picture {
+            width: 99%;
+            float: left;
+            border-style: none none solid none;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        .ratings {
+            width: 100%;
+            float: left;
+            border-style: none none none none;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        .playerspecs {
+            width: 64%;
+            float: left;
+        }
+
+        .abstract {
+            width: 100%;
+            float: left;
+            border-style: none none solid none;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        .oldclubs {
+            width: 100%;
+            float: left;
+            border-style: none none none none;
+            border-width: 1px;
+            border-color: #666666;
+        }
+
+        #ratings p {
+            margin: 2px !important;
+        }
+
+        #ratings h2 {
+            margin: 2px !important;
+        }
+
+        .playerinfo {
+            float: left;
+            width: 45%;
+            border-style: none none none solid;
+            border-width: 1px !important;
+            padding-left: 5px;
+        }
+    </style>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            /*Deze functie wordt aangeroepen door een verandering in checkboxes met de class competitioncheck*/
+            $('.competitioncheck').change(function() {
+                /*Hier worden ouwe resultaten weggehaald*/
+                document.getElementById("clubs_id").innerHTML = "<option value='0'>No team selected</option>";
+                document.getElementById('middlediv').innerHTML = "<tr><th>Name</th><th>Rating</th><th>Preferred Foot</th><th>Club</th><th>Competition</th></tr>";
+
+                /*Hier wordt het filter voor de competitie gemaakt op basis van aangechekte chekboxes*/
+                var names = [];
+                var nameq = "FILTER (?CompName IN (";
+                $('#form input:checked').each(function() {
+                    names.push(this.value);
+                });
+                for (var i = 0; i < names.length; i++) {
+                    nameq += (i == 0) ? ("'" + names[i] + "'") : (",'" + names[i] + "'");
+                }
+                nameq += "))"
+                if (names.length < 1) {
+                    return nameq = "";
+                }
+
+                /*Hier wordt het filter voor de preferred foot gemaakt op basis van aangechekte chekboxes*/
+                var list = [];
+                var querypart = "FILTER (?Foot IN (";
+                $('#form2 input:checked').each(function() {
+                    list.push(this.value);
+                });
+                for (var i = 0; i < list.length; i++) {
+                    querypart += (i == 0) ? ("'" + list[i] + "'") : (",'" + list[i] + "'");
+                }
+                querypart += "))"
+                if (list.length < 1) {
+                    querypart = "";
+                }
+                /*Hier wordt het filter voor de rating gemaakt op basis van de waarde op de slider*/
+                var querypart2 = "FILTER (?Rating <"
+                var rating = RatingInputId.value;
+                querypart2 += rating + ")"
+
+                /*Hier wordt de limit bepaald op basis van waarde in het limit dropdown menu*/
+                var limit = limit_id.value;
+
+                /*Hier wordt de totale query voor de lijst met speler bepaald*/
+                var url = "http://localhost:5820/VoetbalOntology/query";
+                var query = "SELECT ?PlayerName ?Rating ?Foot ?PlayerID ?TeamName ?TeamID ?CompName ?CompID WHERE {  	?CompID rdfs:label ?CompName .  	?TeamID vt:isTeamInCompetition ?CompID .  	?TeamID rdfs:label ?TeamName .    ?PlayerID vt:hasTeamID ?TeamID .  	?PlayerID rdfs:label ?PlayerName.    ?PlayerID vt:hasPrefered ?Foot . ?PlayerID vt:hasOverallRating ?Rating ." + nameq + querypart + querypart2 + "} ORDER BY DESC(?Rating) " + limit;
+
+                /*Hier wordt de totale query voor de lijst met clubs in de geselcteerde competities bepaal. Hier is geen limit, omdat alle clubs in het dropdown menu moeten staan */
+                var query2 = "SELECT ?PlayerName ?Rating ?Foot ?PlayerID ?TeamName ?TeamID ?CompName ?CompID WHERE {  	?CompID rdfs:label ?CompName .  	?TeamID vt:isTeamInCompetition ?CompID .  	?TeamID rdfs:label ?TeamName .    ?PlayerID vt:hasTeamID ?TeamID .  	?PlayerID rdfs:label ?PlayerName.    ?PlayerID vt:hasPrefered ?Foot . ?PlayerID vt:hasOverallRating ?Rating ." + nameq + querypart + querypart2 + "} ORDER BY DESC(?Rating) ";
+
+                /*Hier wordt de eerste query naar onze lokale stardog database gestuurd*/
+                console.log(query);
+                $.ajax({
+                    headers: {
+                        Accept: 'application/sparql-results+json'
+                    },
+                    url: url,
+                    data: {
+                        query: query
+                    },
+                    success: function(data) {
+                        /*Hier worden de resultaten van de eerste query aan variabelen gebonden en in een tabel gestopt*/
+                        var results = data.results.bindings;
+                        var div = document.getElementById('middlediv');
+                        for (var x = 0; x < results.length; x++) {
+                            var playername = results[x]['PlayerName']['value'];
+                            var rating = results[x]['Rating']['value'];
+                            var foot = results[x]['Foot']['value'];
+                            var teamname = results[x]['TeamName']['value'];
+                            var compname = results[x]['CompName']['value'];
+                            div.innerHTML += '<tr><td><a href="#" onclick="playerlink(this.id)" id="' + playername + '">' + playername + "</a></td><td> " + rating + " </td>  <td> " + foot + "</td>   <td> " + teamname + "</td>   <td> " + compname + '</td> </tr>';
+                        };
+
+                    }
+                });
+
+                /*Hier wordt de tweede query naar onze lokale stardog database gestuurd*/
+                $.ajax({
+                    headers: {
+                        Accept: 'application/sparql-results+json'
+                    },
+                    url: url,
+                    data: {
+                        query: query2
+                    },
+                    success: function(data) {
+                        /*Hier worden de resultaten van de tweede query aan variabelen gebonden en in het dropdown menu onder clubs gestopt*/
+                        var div = document.getElementById('clubs_id');
+                        var results = data.results.bindings;
+                        var querylist = [];
+                        for (var x = 0; x < results.length; x++) {
+                            var queryresult = results[x]['TeamName']['value'];
+                            querylist.push(queryresult);
+
+                        };
+                        querylist = $.unique(querylist);
+                        for (var x = 0; x < querylist.length; x++) {
+                            div.innerHTML += '<option value="' + querylist[x] + '"> ' + querylist[x] + '</option>';
+                        };
+
+                    }
+                });
+
+
+
+            });
+
+
+
+        });
+
+        /*Deze functie wordt aangeroepen wanneer er op de naam van een speler is geclickt. De variabele playername is gebaseerd op de id van het klikbare html element*/
+        function playerlink(playername) {
+            /*Hier worden ouwe resultaten weggehaald*/
+            document.getElementById('ratings').innerHTML = '';
+            document.getElementById('picture').innerHTML = '<img src="https://www.asphaltisbest.com/wp-content/uploads/2017/04/not-available.jpg"/>';
+            document.getElementById('abstract').innerHTML = '';
+            document.getElementById('playerspecs').innerHTML = '<h2>' + playername + '</h2>';
+
+            /*Hier wordt de query over spelersinformatie gemaakt. Deze query wordt naar stardog gestuurd.*/
+            var url = "http://localhost:5820/VoetbalOntology/query";
+            var queryplayer = "SELECT ?PlayerName ?Rating ?Birthday ?Foot ?Speed ?Stamina ?Strength ?Height ?Weight ?TeamName ?CompName WHERE {  ?CompID rdfs:label ?CompName . ?TeamID vt:isTeamInCompetition ?CompID . ?TeamID rdfs:label ?TeamName . ?PlayerID rdfs:label ?PlayerName . ?PlayerID vt:hasTeamID ?TeamID . ?PlayerID vt:hasPrefered ?Foot . ?PlayerID vt:hasOverallRating ?Rating . ?PlayerID vt:hasSprintSpeed ?Speed . ?PlayerID vt:hasStamina ?Stamina . ?PlayerID vt:hasStrength ?Strength . ?PlayerID vt:hasHeight ?Height . ?PlayerID vt:hasWeight ?Weight . ?PlayerID vt:hasBirthday ?Birthday . FILTER (?PlayerName IN ( + '" + playername + "')) }ORDER BY DESC(?Rating)"
+
+            /*Hier wordt de query over spelersinformatie naar stardog gestuurd*/
+            $.ajax({
+                headers: {
+                    Accept: 'application/sparql-results+json'
+                },
+                url: url,
+                data: {
+                    query: queryplayer
+                },
+                success: function(data) {
+                    /*Hier worden de resultaten van de stardog query aan variabelen gebonden en in de rechter kolom gestopt*/
+                    var results = data.results.bindings;
+                    var divratings = document.getElementById('ratings');
+                    var divnaam = document.getElementById('playerspecs');
+                    for (var x = 0; x < results.length; x++) {
+                        var playername = results[x]['PlayerName']['value'];
+                        var rating = results[x]['Rating']['value'];
+                        var foot = results[x]['Foot']['value'];
+                        var teamname = results[x]['TeamName']['value'];
+                        var compname = results[x]['CompName']['value'];
+                        var speed = results[x]['Speed']['value'];
+                        var stamina = results[x]['Stamina']['value'];
+                        var strength = results[x]['Strength']['value'];
+                        var height = results[x]['Height']['value'];
+                        var weight = results[x]['Weight']['value'];
+                        var birthday = results[x]['Birthday']['value'];
+                        divratings.innerHTML += '<h2>Average:   ' + rating + '</h2><p>Speed: ' + speed + '</p><p>Stamina: ' + stamina + '</p><p>Strength:' + strength + '</p>';
+                        divnaam.innerHTML += '<p>Birthday: ' + birthday + '</p><p>Preferred foot: ' + foot + '</p><p>Length: ' + height + ' cm</p><p>Weight: ' + weight + ' lbs</p>';
+
+                    };
+                }
+            });
+
+            /*Hier wordt de query over spelersinformatie gemaakt. Deze query wordt naar dbpedia gestuurd.*/
+            var urldb = "http://dbpedia.org/sparql"
+            var queryplayerdb = "PREFIX dbp: <http://dbpedia.org/property/> PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbr: <http://dbpedia.org/resource/> PREFIX type: <http://info.deepcarbon.net/schema/type#> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX dbc: <http://dbpedia.org/resource/Category:> PREFIX dct: <http://purl.org/dc/terms/> PREFIX db: <http://dbpedia.org/> SELECT * WHERE { ?PlayerName rdfs:label '" + playername + "'@en . ?PlayerName dbo:abstract ?Abstract . ?PlayerName dbo:position ?Position. ?PlayerName dbo:thumbnail ?Picture. ?PlayerName dbo:birthPlace ?BirthPlace . ?PlayerName dbo:team ?Teams . ?PlayerName rdf:type dbo:SoccerPlayer. FILTER (lang(?Abstract) = 'en')} LIMIT 1"
+
+            /*Hier wordt de query over spelersinformatie naar dbpedia gestuurd*/
+            $.ajax({
+                headers: {
+                    Accept: 'application/sparql-results+json'
+                },
+                url: urldb,
+                data: {
+                    query: queryplayerdb
+                },
+                success: function(data) {
+                    /*Hier worden de resultaten van de dbpedia query aan variabelen gebonden en in de rechter kolom gestopt*/
+                    var results = data.results.bindings;
+                    console.log(results)
+                    var divnaam = document.getElementById('playerspecs');
+                    var divpic = document.getElementById('picture');
+                    var divab = document.getElementById('abstract');
+                    for (var x = 0; x < results.length; x++) {
+                        var position = results[x]['Position']['value'].slice(28, );
+                        var birthplace = results[x]['BirthPlace']['value'].slice(28, );
+                        var teams = results[x]['Teams']['value'].slice(28, );
+                        var abstract = results[x]['Abstract']['value'];
+                        var picture = results[x]['Picture']['value'];
+                        divpic.innerHTML = '';
+                        divnaam.innerHTML += '<p>Position: ' + position + '</p><p>Birthplace: ' + birthplace + '</p>';
+                        divpic.innerHTML += '<img src="' + picture + '"/>'
+                        divab.innerHTML += '<textarea readonly rows="20" cols="60" style="font-style: italic;">' + abstract + '</textarea>'
+                    };
+                }
+            });
+
+        };
+
+        /*deze functie wordt aangeroepen wanneer er een team is geselcteerd in het dropdown menu*/
+        function TeamSelect() {
+
+            /*Hier worden ouwe resultaten weggehaald*/
+            document.getElementById('middlediv').innerHTML = "<tr><th>Name</th><th>Rating</th><th>Preferred Foot</th><th>Club</th><th>Competition</th></tr>";
+
+
+            /*Hier wordt het filter voor de preferred foot gemaakt op basis van aangechekte chekboxes*/
+            var list = [];
+            var querypart = "FILTER (?Foot IN (";
+            $('#form2 input:checked').each(function() {
+                list.push(this.value);
+            });
+            for (var i = 0; i < list.length; i++) {
+                querypart += (i == 0) ? ("'" + list[i] + "'") : (",'" + list[i] + "'");
+            }
+            querypart += "))"
+            if (list.length < 1) {
+                querypart = "";
+            }
+
+            /*Hier wordt het filter voor de rating gemaakt op basis van de waarde op de slider*/
+            var querypart2 = "FILTER (?Rating <"
+            var rating = RatingInputId.value;
+            querypart2 += rating + ")"
+
+            /*Hier wordt de limit bepaald op basis van waarde in het limit dropdown menu*/
+            var limit = limit_id.value;
+
+            /*Hier wordt het filter voor de club gemaakt op basis van de geselcteerde optie in het dropdown menu*/
+            var clubid = document.getElementById("clubs_id").value;
+            var filterteam = 'FILTER (?TeamName IN (  "' + clubid + '" ))';
+
+            /*Hier wordt de totale query voor de lijst met speler bepaald*/
+            var url = "http://localhost:5820/VoetbalOntology/query";
+            var query2 = "SELECT ?PlayerName ?Rating ?Foot ?PlayerID ?TeamName ?TeamID ?CompName ?CompID WHERE {  	?CompID rdfs:label ?CompName .  	?TeamID vt:isTeamInCompetition ?CompID .  	?TeamID rdfs:label ?TeamName .    ?PlayerID vt:hasTeamID ?TeamID .  	?PlayerID rdfs:label ?PlayerName.    ?PlayerID vt:hasPrefered ?Foot . ?PlayerID vt:hasOverallRating ?Rating ." + filterteam + querypart + querypart2 + "} ORDER BY DESC(?Rating)  " + limit;
+            console.log(query2);
+
+            /*Hier wordt de query naar onze lokale stardog database gestuurd*/
+            $.ajax({
+                headers: {
+                    Accept: 'application/sparql-results+json'
+                },
+                url: url,
+                data: {
+                    query: query2
+                },
+                success: function(data) {
+                    /*Hier worden de resultaten van de dbpedia query aan variabelen gebonden en in de rechter kolom gestopt*/
+                    var results = data.results.bindings;
+                    var querylist = [];
+                    var div = document.getElementById('middlediv');
+                    for (var x = 0; x < results.length; x++) {
+                        var playername = results[x]['PlayerName']['value'];
+                        var rating = results[x]['Rating']['value'];
+                        var foot = results[x]['Foot']['value'];
+                        var teamname = results[x]['TeamName']['value'];
+                        var compname = results[x]['CompName']['value'];
+                        div.innerHTML += '<tr><td><a href="#" onclick="playerlink(this.id)" id="' + playername + '">' + playername + "</a></td><td> " + rating + " </td>  <td> " + foot + "</td>   <td> " + teamname + "</td>   <td> " + compname + '</td> </tr>';
+                    };
+
+                }
+            });
+        };
+    </script>
+
+</head>
+
+<body>
+
+    <div id='wrapper'>
+        <div id=fixfoto>
+            <img src="http://www.psdgraphics.com/wp-content/uploads/2012/06/football-ball.jpg" alt="Soccerball">
+        </div>
+        <div class='TopCollumn'>
+            <h1>Search for Teammates.</h1>
+        </div>
+
+
+        <div id='content'>
+            <div class='leftCollumn'>
+                <h2>Select your filters</h2>
+
+                <select style="width: 100%;" id="limit_id" name="cars">
+                    <option value='LIMIT 10'>Show max 10 results</option>
+                    <option value='LIMIT 20'>Show max 20 results</option>
+                    <option value='LIMIT 50'>Show max 50 results</option>
+                    <option value='LIMIT 100'>Show max 100 results</option>
+                    <option value=''>Show all results(time consuming)</option>
+                    </select>
+                <form id='form'>
+                    <h2>Competition/Country</h2>
+                    <input type="checkbox" class="competitioncheck" name="Bundesliga" value="Germany 1. Bundesliga">Bundesliga<br>
+                    <input type="checkbox" class="competitioncheck" name="Eredivisie" value="Netherlands Eredivisie">Eredivisie<br>
+                    <input type="checkbox" class="competitioncheck" name="Ekstraklasa" value="Poland Ekstraklasa">Ekstraklasa<br>
+                    <input type="checkbox" class="competitioncheck" name="Jupiler League" value="Belgium Jupiler League">Jupiler League<br>
+                    <input type="checkbox" class="competitioncheck" name="La Liga" value="Spain LIGA BBVA">La Liga<br>
+                    <input type="checkbox" class="competitioncheck" name="Ligue 1" value="France Ligue 1">Ligue 1<br>
+                    <input type="checkbox" class="competitioncheck" name="England Premier League" value="England Premier League">England Premier League<br>
+                    <input type="checkbox" class="competitioncheck" name="Serie A" value="Italy Serie A">Serie A<br>
+                    <input type="checkbox" class="competitioncheck" name="Super League" value="Switzerland Super League">Super League<br>
+                    <input type="checkbox" class="competitioncheck" name="Scotland Premier League" value="Scotland Premier League">Scotland Premier League<br>
+                    <input type="checkbox" class="competitioncheck" name="Liga Sagres" value="Portugal Liga ZON Sagres">Liga ZON Sagres<br>
+                </form>
+
+
+                <h2>Team</h2>
+                <form>
+                    <select onchange="TeamSelect()" id="clubs_id" name="cars">
+                    <option value='0'>No team selected</option>
+                    </select>
+                    <br><br>
+                </form>
+
+                <form id="form2">
+                    <h2>Preffered foot</h2>
+                    <input class="competitioncheck" type="checkbox" name="gender" value="left"> Left<br>
+                    <input class="competitioncheck" type="checkbox" name="gender" value="right"> Right<br>
+                </form>
+
+                <form name="registrationForm">
+                    <h2>Maximum rating</h2>
+                    <input type="range" name="RatingInputName" id="RatingInputId" value="100" min="1" max="100" oninput="RatingOutputId.value = RatingInputId.value">
+                    <output name="RatingOutputName" id="RatingOutputId">100</output>
+                </form>
+
+
+            </div>
+
+
+            <div class='middleCollumn'>
+
+                <h2 style="text-align: center;">Players</h2>
+                <table id='middlediv'>
+
+                </table>
+            </div>
+
+
+            <div class='rightCollumn'>
+                <div class=pictureratingspecs>
+                    <div class=picturerating style="text-align: center !important">
+                        <div id=picture>
+                        </div>
+                        <div id=ratings>
+                        </div>
+                    </div>
+                    <div class="playerinfo">
+                        <div id=playerspecs>
+                        </div>
+                    </div>
+                </div>
+
+                <div id=abstract>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
